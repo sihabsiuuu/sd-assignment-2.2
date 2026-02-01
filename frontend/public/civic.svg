@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <path d="M350 120C325 90 290 70 250 70C150 70 70 150 70 250C70 350 150 430 250 430C290 430 325 410 350 380" 
+        stroke="white" 
+        stroke-width="48" 
+        stroke-linecap="round" 
+        fill="none"/>
+  
+  <path d="M310 205C295 185 275 175 250 175C208 175 175 208 175 250C175 292 208 325 250 325C275 325 295 315 310 295" 
+        stroke="white" 
+        stroke-width="40" 
+        stroke-linecap="round" 
+        fill="none"/>
+  
+  <circle cx="410" cy="140" r="55" fill="#EF4444"/>
+</svg>

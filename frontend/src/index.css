@@ -1,21 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #00d4ff; /* Vibrant cyan */
+  --color-primary-dull: #00a3b8; /* Darker cyan for hover/shadows */
 
-@theme{
-    --color-primary: #f84565;
-    --color-primary-dull: #D63854;
+  --radius-2xl: 0.3rem;
 
-    --radius-2xl: 0.75rem;
+  /* Optional secondary / accents */
+  --color-accent: #ff9f1c; /* Warm orange accent */
+  --color-bg: #0a0a0f; /* Dark background */
+  --color-bg-light: #111113; /* Slightly lighter panel/card background */
+  --color-border: #ffffff20; /* Semi-transparent borders */
+  --color-text: #e5e5e5; /* Light neutral text */
+  --color-text-muted: #a0a0a0; /* Muted / placeholder text */
 }
-*{
-    font-family: "Outfit", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: weight;
-    font-style: normal;
+
+* {
+  font-family: "Inter", sans-serif;
 }
 
-body{
-    color: white;
-    background-color: #09090B;
+body {
+  color: var(--color-text);
+  background-color: var(--color-bg);
 }
