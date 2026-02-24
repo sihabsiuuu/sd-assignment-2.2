@@ -1,91 +1,158 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  MapPin,
-  Phone,
-  Copy,
-  Trash2,
   Search,
   Plus,
-  Eye,
-  User,
-  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Filter,
+  MapPin,
+  ChevronDown,
 } from "lucide-react";
-import StatementDetailsPopUp from "../components/StatementDetailsPopUp";
 import {
   getComplaints,
   deleteComplaintByUsername,
 } from "../utils/localStorage";
+import PopUpCard from "../components/PopUpCard";
+import ListCard from "../components/ListCard";
+import Container from "../components/Layout/Container";
+
+const LIST_STATE_KEY = "complaint_list_state";
 
 const ComplaintList = () => {
   const [complaints, setComplaints] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+
+  // Filters
+  const [filterCategory, setFilterCategory] = useState("All");
+  const [filterLocation, setFilterLocation] = useState("All");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
   const navigate = useNavigate();
 
-  // Load complaints on mount
+  // Load complaints & saved state
   useEffect(() => {
-    setComplaints(getComplaints());
+    document.title = "Complaints Records | Civic";
+    const data = getComplaints();
+    setComplaints(Array.isArray(data) ? data : []);
+
+    const saved = localStorage.getItem(LIST_STATE_KEY);
+    if (saved) {
+      const s = JSON.parse(saved);
+      setSearch(s.search || "");
+      setFilterCategory(s.filterCategory || "All");
+      setFilterLocation(s.filterLocation || "All");
+      setCurrentPage(s.currentPage || 1);
+    }
   }, []);
 
-  // Copy text to clipboard
+  // Reset page when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterCategory, filterLocation]);
+
+  // Save state
+  useEffect(() => {
+    localStorage.setItem(
+      LIST_STATE_KEY,
+      JSON.stringify({ search, filterCategory, filterLocation, currentPage }),
+    );
+  }, [search, filterCategory, filterLocation, currentPage]);
+
+  // Filter logic
+  const filtered = complaints.filter((c) => {
+    const term = search.toLowerCase();
+    const matchesSearch =
+      c.username?.toLowerCase().includes(term) ||
+      c.location?.toLowerCase().includes(term) ||
+      c.email?.toLowerCase().includes(term) ||
+      c.category?.toLowerCase().includes(term);
+
+    const matchesCategory =
+      filterCategory === "All" || c.category === filterCategory;
+    const matchesLocation =
+      filterLocation === "All" || c.location === filterLocation;
+
+    return matchesSearch && matchesCategory && matchesLocation;
+  });
+
+  // STATIC FILTER OPTIONS (Original Text)
+  const availableCategories = [
+    "All",
+    ...Array.from(new Set(complaints.map((c) => c.category))),
+  ];
+  const availableLocations = [
+    "All",
+    ...Array.from(new Set(complaints.map((c) => c.location))),
+  ];
+
+  // Pagination
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+  // Handlers
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleCopy = (e, text) => {
     e?.stopPropagation();
     navigator.clipboard.writeText(text);
     window.alert(`Copied: ${text}`);
   };
 
-  // Delete complaint
   const handleDeleteRequest = (username) => {
     if (window.confirm(`Permanently delete record for @${username}?`)) {
       const updated = deleteComplaintByUsername(username);
-      setComplaints(updated);
+      setComplaints(Array.isArray(updated) ? updated : []);
+      const newTotalPages = Math.ceil(updated.length / itemsPerPage) || 1;
+      if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
     }
   };
 
-  // Filter complaints by username or location
-  const filtered = complaints.filter(
-    (c) =>
-      c.username.toLowerCase().includes(search.toLowerCase()) ||
-      c.location.toLowerCase().includes(search.toLowerCase()),
-  );
+  const handleResetFilters = () => {
+    setSearch("");
+    setFilterCategory("All");
+    setFilterLocation("All");
+    setCurrentPage(1);
+    localStorage.removeItem(LIST_STATE_KEY);
+  };
+
+  const isFiltered =
+    search !== "" || filterCategory !== "All" || filterLocation !== "All";
 
   return (
-    <div className="max-w-7xl mx-auto py-24 px-4 md:px-8 min-h-screen relative text-white">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12 md:mb-16">
-        <div className="space-y-4 text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-2xl border border-primary/20 bg-primary/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black text-white/80 tracking-widest uppercase">
-              {complaints.length.toString().padStart(2, "0")} Records Found
-            </span>
-          </div>
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white uppercase leading-none">
-            Complaints<span className="text-primary">.</span>
-          </h2>
-        </div>
+    <Container className="py-24 md:py-24 min-h-screen relative text-white">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col gap-8 mb-6 w-full">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-4 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-2xl border border-white/10 bg-white/5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-black text-white/80 tracking-widest uppercase">
+                {totalItems.toString().padStart(2, "0")} Records Found
+              </span>
+            </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-          {/* Search */}
-          <div className="relative group flex-1">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search by ID or City..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-[#111113] border border-white/5 p-4 pl-12 pr-6 rounded-2xl text-sm text-white focus:outline-none focus:border-primary/50 transition-all w-full lg:w-80 font-medium"
-            />
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white uppercase leading-none">
+              Complaints<span className="text-primary">.</span>
+            </h2>
           </div>
 
-          {/* New Entry Button */}
           <button
-            onClick={() => navigate("/")}
-            className="group relative flex items-center justify-center gap-3 bg-primary/10 border border-primary/50 px-8 py-4 rounded-2xl hover:bg-primary-dull transition-all duration-300 shadow hover:shadow-primary/40 cursor-pointer active:scale-95"
+            onClick={() => {
+              localStorage.removeItem("complaint_form_state");
+              navigate("/");
+            }}
+            className="group flex items-center justify-center gap-3 bg-primary/10 border border-primary/40 px-8 h-14 rounded-2xl hover:bg-primary-dull transition-all shadow-lg active:scale-95 cursor-pointer"
           >
             <Plus
               size={18}
@@ -96,148 +163,174 @@ const ComplaintList = () => {
             </span>
           </button>
         </div>
+
+        {/* FILTER BAR */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+          {/* SEARCH */}
+          <div className="relative group col-span-1 sm:col-span-2">
+            <Search
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search by ID, city or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-bg-light border border-white/10 h-14 pl-14 pr-6 rounded-2xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/40 transition-all w-full font-semibold tracking-wide shadow-inner"
+            />
+          </div>
+
+          {/* CATEGORY */}
+          <div className="relative group">
+            <Filter
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors pointer-events-none"
+              size={18}
+            />
+            <ChevronDown
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-white/10 group-focus-within:text-primary/50 pointer-events-none"
+              size={14}
+            />
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="bg-bg-light border border-white/10 h-14 pl-14 pr-10 rounded-2xl text-[11px] text-white/70 focus:outline-none focus:border-primary/40 transition-all w-full appearance-none font-black uppercase tracking-widest cursor-pointer shadow-inner hover:border-white/20"
+            >
+              {availableCategories.map((cat) => (
+                <option
+                  key={cat}
+                  value={cat}
+                  className="bg-bg-light text-sm font-sans"
+                >
+                  {cat === "All" ? "All Category" : cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* LOCATION */}
+          <div className="relative group">
+            <MapPin
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors pointer-events-none"
+              size={18}
+            />
+            <ChevronDown
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-white/10 group-focus-within:text-primary/50 pointer-events-none"
+              size={14}
+            />
+            <select
+              value={filterLocation}
+              onChange={(e) => setFilterLocation(e.target.value)}
+              className="bg-bg-light border border-white/10 h-14 pl-14 pr-10 rounded-2xl text-[11px] text-white/70 focus:outline-none focus:border-primary/40 transition-all w-full appearance-none font-black uppercase tracking-widest cursor-pointer shadow-inner hover:border-white/20"
+            >
+              {availableLocations.map((loc) => (
+                <option
+                  key={loc}
+                  value={loc}
+                  className="bg-bg-light text-sm font-sans"
+                >
+                  {loc === "All" ? "All Location" : loc}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* RESET FILTERS */}
+          {isFiltered && (
+            <div
+              onClick={handleResetFilters}
+              className="flex items-center justify-end col-span-1 sm:col-span-2 lg:col-span-4 text-red-500/60 text-[10px] font-black uppercase tracking-[0.4em] cursor-pointer hover:text-red-500 transition-all select-none pr-2"
+            >
+              Reset All
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Complaints List */}
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 bg-[#111113]/30 rounded-2xl border-2 border-dashed border-white/5 w-full">
-          <p className="text-gray-600 font-bold uppercase tracking-[0.4em] text-[10px] text-center">
+      {/* LIST SECTION */}
+      {totalItems === 0 ? (
+        <div className="flex flex-col items-center justify-center py-32 bg-bg-light/20 rounded-2xl border-2 border-dashed border-white/5 w-full">
+          <p className="text-white/30 font-bold uppercase tracking-[0.4em] text-[10px] text-center">
             No matching records found
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map((c, index) => (
-            <div
-              key={index}
-              className="group bg-[#111113] border border-white/5 rounded-2xl hover:border-primary/30 transition-all duration-500 overflow-hidden"
-            >
-              <div className="p-6 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start lg:items-center">
-                {/* User Info */}
-                <div className="lg:col-span-3 flex justify-between items-start lg:block min-w-0">
-                  <div className="space-y-3 min-w-0">
-                    <h3 className="text-primary/90 font-black text-xl tracking-tighter uppercase leading-none break-all">
-                      @{c.username}
-                    </h3>
-                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/5 border border-white/5 rounded-2xl w-fit">
-                      <User size={12} className="text-primary/70 shrink-0" />
-                      <p className="text-white/80 text-[10px] font-bold uppercase tracking-tight truncate">
-                        {c.firstName} {c.lastName}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteRequest(c.username)}
-                    className="lg:hidden p-3.5 bg-white/5 border border-white/10 rounded-2xl text-primary hover:bg-primary hover:text-white transition-all cursor-pointer"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 w-full">
+            {currentItems.map((c, index) => (
+              <ListCard
+                key={c.username || index}
+                c={c}
+                handleDeleteRequest={handleDeleteRequest}
+                handleCopy={handleCopy}
+                setSelectedComplaint={setSelectedComplaint}
+              />
+            ))}
+          </div>
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/5 pt-8 mt-4">
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-3 rounded-xl border border-white/5 bg-bg-light hover:border-primary/40 disabled:opacity-20 transition-all"
+                >
+                  <ChevronLeft size={16} className="text-primary" />
+                </button>
+
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    if (
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      Math.abs(pageNum - currentPage) <= 1
+                    ) {
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-10 h-10 rounded-2xl font-black text-[10px] border transition-all ${
+                            currentPage === pageNum
+                              ? "bg-primary border-primary text-black"
+                              : "bg-bg-light border-white/5 text-white/40 hover:text-white"
+                          }`}
+                        >
+                          {pageNum.toString().padStart(2, "0")}
+                        </button>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
 
-                {/* Location & Phone */}
-                <div className="lg:col-span-3 space-y-4 border-l-0 lg:border-l border-white/5 lg:pl-8">
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.location)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4 text-gray-400 hover:text-white transition-all group/map"
-                  >
-                    <div className="p-2.5 bg-white/5 rounded-2xl border border-white/5 group-hover/map:border-primary/40 shrink-0 flex items-center justify-center transition-all">
-                      <MapPin size={16} className="text-primary/60" />
-                    </div>
-                    <span className="text-sm font-semibold truncate tracking-tight">
-                      {c.location}
-                    </span>
-                  </a>
-
-                  <div className="flex items-center gap-3">
-                    <a
-                      href={`tel:${c.phone}`}
-                      className="flex items-center gap-4 text-gray-400 hover:text-white transition-all group/phone min-w-0"
-                    >
-                      <div className="p-2.5 bg-white/5 rounded-2xl border border-white/5 group-hover/phone:border-primary/40 shrink-0 flex items-center justify-center transition-all">
-                        <Phone size={16} className="text-primary/60" />
-                      </div>
-                      <span className="text-xs font-mono tracking-widest truncate">
-                        {c.phone}
-                      </span>
-                    </a>
-                    <button
-                      onClick={(e) => handleCopy(e, c.phone)}
-                      className="ml-auto p-2.5 hover:bg-white/5 rounded-2xl text-gray-600 hover:text-primary transition-all border border-transparent cursor-pointer"
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Complaint Snippet & View */}
-                <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-white/5 pt-6 lg:pt-0 lg:pl-10 min-w-0 h-full">
-                  <div className="flex flex-col h-full justify-between gap-6">
-                    <div className="relative">
-                      <div className="absolute -left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-primary/5 to-transparent rounded-full hidden lg:block" />
-                      <p className="text-gray-400 hover:text-white text-sm leading-relaxed font-light italic line-clamp-2 pl-2">
-                        "{c.complaint}"
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedComplaint(c)}
-                      className="group/btn relative w-full overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] p-1 transition-all duration-300 hover:border-primary/40 hover:bg-primary/[0.04] cursor-pointer active:scale-[0.99]"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-                      <div className="relative flex items-center justify-between px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-2xl bg-primary/10 border border-primary/20 group-hover/btn:bg-primary group-hover/btn:border-primary transition-all duration-300">
-                            <Eye
-                              size={16}
-                              className="text-primary group-hover/btn:text-white"
-                            />
-                          </div>
-                          <div className="flex flex-col items-start text-left">
-                            <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] leading-none mb-1">
-                              Analysis Portal
-                            </span>
-                            <span className="text-white/40 text-[8px] font-bold uppercase tracking-widest group-hover/btn:text-primary/60 transition-colors">
-                              View Decrypted Log
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-px w-6 bg-white/10 group-hover/btn:w-10 group-hover/btn:bg-primary/50 transition-all duration-500" />
-                          <ArrowRight
-                            size={16}
-                            className="text-white/20 group-hover/btn:text-primary group-hover/btn:translate-x-1 transition-all"
-                          />
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Delete Button */}
-                <div className="hidden lg:col-span-1 lg:flex justify-end">
-                  <button
-                    onClick={() => handleDeleteRequest(c.username)}
-                    className="p-4 bg-white/5 border border-white/5 rounded-2xl text-white/20 hover:text-white  hover:bg-red-500 hover:border-red-500 transition-all active:scale-90 cursor-pointer"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-3 rounded-xl border border-white/5 bg-bg-light hover:border-primary/40 disabled:opacity-20 transition-all"
+                >
+                  <ChevronRight size={16} className="text-primary" />
+                </button>
               </div>
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Statement Popup */}
       {selectedComplaint && (
-        <StatementDetailsPopUp
+        <PopUpCard
           data={selectedComplaint}
           close={() => setSelectedComplaint(null)}
           handleCopy={handleCopy}
         />
       )}
-    </div>
+    </Container>
   );
 };
 

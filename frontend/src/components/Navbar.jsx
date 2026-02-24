@@ -15,6 +15,7 @@ import {
   Youtube,
   Send,
 } from "lucide-react";
+import Container from "./Layout/Container";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -83,100 +84,115 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[9999] w-full bg-[#09090B]/80 backdrop-blur-md border-b border-primary/20 py-4">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
-        <button
-          onClick={() => handleNavigation("/")}
-          className="group flex items-center gap-1 bg-transparent border-none cursor-pointer outline-none z-[10001]"
-        >
-          <span className="text-[20px] md:text-[22px] font-black tracking-tighter text-white uppercase italic">
-            Civic
-            <span className="text-primary drop-shadow-[0_0_10px_rgba(248,69,101,0.4)] not-italic">
-              .
+      <Container>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => handleNavigation("/")}
+            className="group flex items-center gap-1 bg-transparent border-none cursor-pointer outline-none z-[10001]"
+          >
+            <span className="text-[20px] md:text-[22px] font-black tracking-tighter text-white uppercase italic">
+              Civic
+              <span className="text-primary not-italic">.</span>
             </span>
-          </span>
-        </button>
+          </button>
 
-        <div className="hidden md:flex items-center gap-8 lg:gap-12">
-          {[
-            { path: "/", label: "SUBMIT" },
-            { path: "/view-complaints", label: "RECORDS" },
-          ].map((link) => (
-            <button
-              key={link.path}
-              onClick={() => handleNavigation(link.path)}
-              className="relative py-1 group bg-transparent border-none cursor-pointer"
-            >
-              <span
-                className={`text-[11px] font-bold tracking-[0.3em] transition-all duration-300 ${isActive(link.path) ? "text-primary" : "text-gray-400 group-hover:text-white"}`}
+          {/* DESKTOP NAV */}
+          <div className="hidden md:flex items-center gap-8 lg:gap-12">
+            {[
+              { path: "/", label: "SUBMIT" },
+              { path: "/view-complaints", label: "RECORDS" },
+            ].map((link) => (
+              <button
+                key={link.path}
+                onClick={() => handleNavigation(link.path)}
+                className="relative py-1 group bg-transparent border-none cursor-pointer"
               >
-                {link.label}
-              </span>
-              <span
-                className={`absolute -bottom-1 left-0 h-[2px] transition-all duration-300 ${isActive(link.path) ? "w-full bg-primary shadow-[0_0_8px_rgba(248,69,101,0.6)]" : "w-0 group-hover:w-full bg-primary/40"}`}
-              />
-            </button>
-          ))}
+                <span
+                  className={`text-[11px] font-bold tracking-[0.3em] transition-all duration-300 ${
+                    isActive(link.path)
+                      ? "text-primary"
+                      : "text-gray-400 group-hover:text-white"
+                  }`}
+                >
+                  {link.label}
+                </span>
+                <span
+                  className={`absolute bottom-0.5 left-0 h-[2px] transition-all duration-300 ${
+                    isActive(link.path)
+                      ? "w-full bg-primary"
+                      : "w-0 group-hover:w-full bg-primary/40"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* MOBILE BUTTON */}
+          <button
+            className="md:hidden z-[10001] text-white hover:text-primary active:scale-90 bg-transparent border-none cursor-pointer"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? (
+              <X size={28} strokeWidth={2.5} />
+            ) : (
+              <Menu size={28} strokeWidth={2.5} />
+            )}
+          </button>
         </div>
+      </Container>
 
-        <button
-          className="md:hidden z-[10001] text-white hover:text-primary active:scale-90 bg-transparent border-none cursor-pointer"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? (
-            <X size={28} strokeWidth={2.5} />
-          ) : (
-            <Menu size={28} strokeWidth={2.5} />
-          )}
-        </button>
-      </div>
-
+      {/* MOBILE MENU — RIGHT → LEFT SLIDE */}
       <div
-        className={`md:hidden fixed inset-0 w-full h-screen bg-[#09090B] transition-all duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] ${isOpen ? "translate-y-0 opacity-100 visible" : "-translate-y-full opacity-0 invisible"}`}
+        className={`md:hidden fixed inset-0 w-full h-screen bg-[#09090B] transition-transform duration-500 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        <div className="h-full flex flex-col px-8 sm:px-12 pt-20 pb-12 relative overflow-y-auto">
+        <div className="h-full flex flex-col px-8 sm:px-12 pt-20 pb-12 relative overflow-hidden">
+          {/* Mobile Nav Links */}
           <div className="flex-grow flex flex-col justify-center gap-4 z-10">
             {[
               { path: "/", label: "SUBMIT REPORT" },
               { path: "/view-complaints", label: "VIEW RECORDS" },
-            ].map((link, index) => (
+            ].map((link) => (
               <button
                 key={link.path}
                 onClick={() => handleNavigation(link.path)}
-                className={`flex items-center justify-between w-full group py-4 transition-all duration-700 bg-transparent border-none text-left ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
-                style={{ transitionDelay: `${index * 100 + 200}ms` }}
+                className="flex items-center justify-between w-full group py-4 bg-transparent border-none text-left"
               >
                 <span
-                  className={`text-4xl sm:text-5xl font-black tracking-tighter italic transition-colors duration-300 ${isActive(link.path) ? "text-primary" : "text-white group-hover:text-primary"}`}
+                  className={`text-4xl sm:text-5xl font-black tracking-tighter italic ${
+                    isActive(link.path) ? "text-primary" : "text-white"
+                  }`}
                 >
                   {link.label}
                 </span>
                 <ArrowUpRight
-                  className={`transition-all duration-500 ${isActive(link.path) ? "text-primary" : "text-white/20 opacity-0 group-hover:opacity-100 group-hover:translate-x-1"}`}
+                  className={
+                    isActive(link.path) ? "text-primary" : "text-white/40"
+                  }
                   size={36}
                 />
               </button>
             ))}
           </div>
 
+          {/* Footer Social Icons — Centered */}
           <div className="z-10 mt-auto pt-8">
-            <div
-              className={`h-[1px] bg-gradient-to-r from-primary/60 via-primary-dull/20 to-transparent w-full mb-8 transition-all duration-[1500ms] delay-500 origin-left ${isOpen ? "scale-x-100" : "scale-x-0"}`}
-            />
+            <div className="h-[1px] bg-gradient-to-r from-primary/60 via-primary-dull/20 to-transparent w-full mb-8" />
+
             <div className="flex flex-col gap-6">
-              <span
-                className={`text-[10px] font-bold tracking-[0.4em] text-primary-dull/60 transition-all duration-700 delay-700 uppercase ${isOpen ? "opacity-100" : "opacity-0"}`}
-              >
+              <span className="text-[10px] font-bold tracking-[0.4em] text-primary-dull/60 uppercase text-center">
                 Connect With Us
               </span>
-              <div className="grid grid-cols-5 gap-3 max-w-[320px]">
-                {socialLinks.map((social, index) => (
+
+              <div className="flex justify-center flex-wrap gap-3 max-w-[320px] mx-auto">
+                {socialLinks.map((social) => (
                   <a
                     key={social.label}
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center justify-center aspect-square text-white/60 border border-primary/20 rounded-xl bg-primary/5 transition-all duration-500 hover:text-white hover:bg-primary hover:border-primary hover:shadow-[0_0_15px_rgba(248,69,101,0.4)] hover:-translate-y-1 active:scale-95 ${isOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
-                    style={{ transitionDelay: `${800 + index * 40}ms` }}
+                    className="flex items-center justify-center w-14 h-14 text-white/60 border border-primary/20 rounded-2xl bg-primary/5 hover:text-white hover:bg-primary hover:border-primary active:scale-95"
                     aria-label={social.label}
                   >
                     {social.icon}
@@ -186,9 +202,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div
-            className={`absolute -bottom-20 -right-20 w-96 h-96 bg-primary/10 blur-[120px] rounded-full transition-opacity duration-1000 pointer-events-none ${isOpen ? "opacity-100" : "opacity-0"}`}
-          />
+          <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-primary/10 blur-[120px] rounded-2xl pointer-events-none" />
         </div>
       </div>
     </nav>
